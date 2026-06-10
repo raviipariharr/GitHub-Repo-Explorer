@@ -10,5 +10,8 @@
   },
   "devDependencies": {
     "vite": "^8.0.12"
+  },
+  "dependencies": {
+    "axios": "^1.17.0"
   }
 }

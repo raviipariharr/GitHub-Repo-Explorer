@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { SearchBar } from "./components/search/SearchBar";
 import { UserProfile } from "./components/profile/UserProfile";
+import { RepoList } from "./components/repos/RepoList";
 import { useUser } from "./hooks/useUser";
 import { useRecentSearches } from "./hooks/useRecentSearches";
 import styles from "./App.module.css";
@@ -8,7 +9,7 @@ import styles from "./App.module.css";
 export default function App() {
   const { user, loading: userLoading, error: userError, fetchUser } = useUser();
   const { recents, addRecent, removeRecent, clearAll } = useRecentSearches();
-  const [currentUsername, setCurrentUsername] = useState(null);
+  const [, setCurrentUsername] = useState(null);
 
   async function handleSearch(username) {
     setCurrentUsername(username);
@@ -48,11 +49,7 @@ export default function App() {
         {(user || userLoading || userError) && (
           <div className={styles.results}>
             <UserProfile user={user} loading={userLoading} error={userError} />
-            {user && (
-              <div className={styles.reposPlaceholder}>
-                <p>📦 Repository list coming in Step 3…</p>
-              </div>
-            )}
+            {user && <RepoList user={user} />}
           </div>
         )}
 
