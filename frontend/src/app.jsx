@@ -1,20 +1,27 @@
 import { useState } from "react";
-import { SearchBar } from "./components/search/SearchBar";
-import { UserProfile } from "./components/profile/UserProfile";
-import { RepoList } from "./components/repos/RepoList";
-import { useUser } from "./hooks/useUser";
+import { SearchBar }      from "./components/search/SearchBar";
+import { UserProfile }    from "./components/profile/UserProfile";
+import { LanguageChart }  from "./components/profile/LanguageChart";
+import { RepoList }       from "./components/repos/RepoList";
+import { useUser }           from "./hooks/useUser";
+import { useLanguageStats }  from "./hooks/useLanguageStats";
 import { useRecentSearches } from "./hooks/useRecentSearches";
 import styles from "./App.module.css";
 
 export default function App() {
-  const { user, loading: userLoading, error: userError, fetchUser } = useUser();
-  const { recents, addRecent, removeRecent, clearAll } = useRecentSearches();
+  const { user, loading: userLoading, error: userError, fetchUser }          = useUser();
+  const { stats, loading: statsLoading, fetchStats, reset: resetStats }      = useLanguageStats();
+  const { recents, addRecent, removeRecent, clearAll }                       = useRecentSearches();
   const [, setCurrentUsername] = useState(null);
 
   async function handleSearch(username) {
     setCurrentUsername(username);
+    resetStats();
     const { data } = await fetchUser(username);
-    if (data) addRecent(data.login);
+    if (data) {
+      addRecent(data.login);
+      fetchStats(data.login);   // fire-and-forget — chart loads independently
+    }
   }
 
   return (
@@ -49,6 +56,12 @@ export default function App() {
         {(user || userLoading || userError) && (
           <div className={styles.results}>
             <UserProfile user={user} loading={userLoading} error={userError} />
+
+            {/* Language chart — shows skeleton while profile loads, then real data */}
+            {(user || userLoading) && !userError && (
+              <LanguageChart stats={stats} loading={userLoading || statsLoading} />
+            )}
+
             {user && <RepoList user={user} />}
           </div>
         )}
