@@ -8,8 +8,8 @@ A full-stack GitHub profile and repository explorer built as a Full Stack Develo
 
 | | URL |
 |---|---|
-| Frontend | _Not deployed — run locally (see below)_ |
-| Backend API | _Not deployed — run locally (see below)_ |
+| Frontend | https://github-explorer-frontend-39ed.onrender.com/ |
+| Backend API |https://github-explorer-backend-wi6k.onrender.com/ |
 
 > To deploy: frontend → [Vercel](https://vercel.com) (set `VITE_API_URL` env var), backend → [Railway](https://railway.app) or [Render](https://render.com) (set `GITHUB_TOKEN` + `FRONTEND_ORIGIN` env vars).
 
@@ -146,24 +146,6 @@ Fetch a GitHub user's public profile.
 |---|---|---|
 | `username` | string | Alphanumeric + hyphens, 1–39 chars, cannot start/end with hyphen |
 
-**Response `200`**
-```json
-{
-  "login": "torvalds",
-  "name": "Linus Torvalds",
-  "bio": "Just a programmer",
-  "avatar_url": "https://avatars.githubusercontent.com/u/1024025",
-  "html_url": "https://github.com/torvalds",
-  "followers": 233000,
-  "following": 0,
-  "public_repos": 8,
-  "location": "Portland, OR",
-  "company": "Linux Foundation",
-  "blog": "https://linuxfoundation.org",
-  "twitter_username": null,
-  "created_at": "2011-09-03T15:26:22Z"
-}
-```
 
 **Error responses**
 
@@ -191,45 +173,9 @@ Fetch one page of a user's public repositories.
 | `sort` | string | `updated` | `updated` · `stars` · `full_name` · `created` |
 | `direction` | string | `desc` | `asc` · `desc` |
 
-**Example**
-```
-GET /api/users/torvalds/repos?page=2&sort=stars&direction=desc
 ```
 
 **Response `200`**
-```json
-{
-  "repos": [
-    {
-      "id": 2325298,
-      "name": "linux",
-      "full_name": "torvalds/linux",
-      "description": "Linux kernel source tree",
-      "html_url": "https://github.com/torvalds/linux",
-      "language": "C",
-      "stargazers_count": 182000,
-      "forks_count": 54000,
-      "open_issues_count": 318,
-      "watchers_count": 182000,
-      "updated_at": "2024-06-01T10:00:00Z",
-      "created_at": "2011-09-04T22:48:12Z",
-      "pushed_at": "2024-06-01T08:00:00Z",
-      "topics": ["kernel", "linux", "os"],
-      "visibility": "public",
-      "default_branch": "master",
-      "license": "GPL-2.0",
-      "is_fork": false,
-      "homepage": null,
-      "size": 4800000
-    }
-  ],
-  "hasMore": false,
-  "page": 2,
-  "perPage": 10
-}
-```
-
----
 
 ### `GET /api/users/:username/repos/:repo/languages`
 
@@ -250,26 +196,6 @@ Fetch the language byte breakdown for a single repository. Used when expanding a
   "Shell": 132891,
   "Makefile": 48231
 }
-```
-
----
-
-### `GET /api/users/:username/language-stats`
-
-Fetch aggregated language statistics across all of a user's public repositories. Used to power the Language Statistics chart. Internally fetches up to 3 pages (90 repos) from GitHub and sums bytes per language.
-
-**Response `200`**
-```json
-{
-  "JavaScript": 2483920,
-  "TypeScript": 1829340,
-  "Python": 920812,
-  "CSS": 341200,
-  "HTML": 129300,
-  "Shell": 48100
-}
-```
-
 ---
 
 ## Project Structure
