@@ -1,22 +1,18 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { SearchBar }      from "./components/search/SearchBar";
 import { UserProfile }    from "./components/profile/UserProfile";
 import { LanguageChart }  from "./components/profile/LanguageChart";
 import { RepoList }       from "./components/repos/RepoList";
+import { ErrorBoundary }  from "./components/ui/ErrorBoundary";
 import { useUser }           from "./hooks/useUser";
 import { useLanguageStats }  from "./hooks/useLanguageStats";
 import { useRecentSearches } from "./hooks/useRecentSearches";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { ErrorBoundary } from "./components/ui/ErrorBoundary"; 
 import styles from "./App.module.css";
-import "./index.css";
-import App from "./App.jsx";
 
 export default function App() {
-  const { user, loading: userLoading, error: userError, fetchUser }          = useUser();
-  const { stats, loading: statsLoading, fetchStats, reset: resetStats }      = useLanguageStats();
-  const { recents, addRecent, removeRecent, clearAll }                       = useRecentSearches();
+  const { user, loading: userLoading, error: userError, fetchUser, reset: resetUser } = useUser();
+  const { stats, loading: statsLoading, fetchStats, reset: resetStats }               = useLanguageStats();
+  const { recents, addRecent, removeRecent, clearAll }                                = useRecentSearches();
   const [, setCurrentUsername] = useState(null);
 
   async function handleSearch(username) {
@@ -25,17 +21,14 @@ export default function App() {
     const { data } = await fetchUser(username);
     if (data) {
       addRecent(data.login);
-      fetchStats(data.login);   // fire-and-forget — chart loads independently
+      fetchStats(data.login);
     }
   }
 
-  createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </StrictMode>
-);
+  const handleReset = useCallback(() => {
+    resetUser();
+    resetStats();
+  }, [resetUser, resetStats]);
 
   return (
     <div className={styles.app}>
@@ -67,16 +60,21 @@ export default function App() {
         </div>
 
         {(user || userLoading || userError) && (
-          <div className={styles.results}>
-            <UserProfile user={user} loading={userLoading} error={userError} />
+          <ErrorBoundary onReset={handleReset}>
+            <div className={styles.results}>
+              <UserProfile user={user} loading={userLoading} error={userError} />
 
-            {/* Language chart — shows skeleton while profile loads, then real data */}
-            {(user || userLoading) && !userError && (
-              <LanguageChart stats={stats} loading={userLoading || statsLoading} />
-            )}
+              {(user || userLoading) && !userError && (
+                <LanguageChart stats={stats} loading={userLoading || statsLoading} />
+              )}
 
-            {user && <RepoList user={user} />}
-          </div>
+              {user && (
+                <ErrorBoundary>
+                  <RepoList user={user} />
+                </ErrorBoundary>
+              )}
+            </div>
+          </ErrorBoundary>
         )}
 
         {!user && !userLoading && !userError && (

@@ -1,0 +1,24 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 0 4px;
+}
+.count { font-size: 14px; color: var(--text-muted); }
+.count strong { color: var(--text); font-weight: 600; }
+.controls { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.label {
+  font-size: 12px; color: var(--text-muted); margin-right: 4px;
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.btn {
+  padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: transparent; color: var(--text-secondary); font-size: 13px;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn:hover { background: var(--surface-hover); color: var(--text); border-color: var(--text-muted); }
+.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+.active:hover { background: var(--accent); color: #fff; opacity: 0.88; }
+.arrow { font-size: 12px; }
