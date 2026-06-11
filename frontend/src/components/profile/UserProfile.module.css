@@ -56,8 +56,9 @@
 
 .stats {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   flex-wrap: wrap;
+  align-items: stretch;
 }
 
 .stat {
@@ -67,15 +68,20 @@
   background: var(--surface-hover);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 8px 16px;
-  min-width: 80px;
+  padding: 8px 14px;
+  flex: 1;
+  min-width: 100;
 }
 
 .statValue {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text);
   line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .statLabel {
@@ -83,6 +89,10 @@
   color: var(--text-muted);
   margin-top: 4px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
 }
 
 .meta {
@@ -135,4 +145,6 @@
 @media (max-width: 520px) {
   .card { flex-direction: column; }
   .avatar { width: 68px; height: 68px; }
+  .stats { gap: 8px; }
+  .stat { max-width: none; flex: 1 1 calc(33% - 8px); }
 }
