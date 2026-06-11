@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+// In dev, Vite proxies /api → http://localhost:4000/api (no env var needed).
+// In production, set VITE_API_URL to your deployed backend origin.
+const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const client = axios.create({
   baseURL: BASE_URL,
@@ -8,9 +10,6 @@ const client = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-/**
- * Normalise axios errors into a consistent shape the UI can render.
- */
 function normaliseError(error) {
   if (error.response?.data?.message) {
     return {
@@ -20,16 +19,12 @@ function normaliseError(error) {
     };
   }
   if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
-    return {
-      message: "Cannot reach the server. Is the backend running?",
-      status: 0,
-    };
+    return { message: "Cannot reach the server. Is the backend running?", status: 0 };
   }
   return { message: error.message || "An unexpected error occurred.", status: 0 };
 }
 
 export const githubApi = {
-  /** Fetch a user profile */
   getUser: async (username) => {
     try {
       const { data } = await client.get(`/users/${username}`);
@@ -39,7 +34,6 @@ export const githubApi = {
     }
   },
 
-  /** Fetch one page of repositories */
   getRepos: async (username, { page = 1, sort = "updated", direction = "desc" } = {}) => {
     try {
       const { data } = await client.get(`/users/${username}/repos`, {
@@ -51,7 +45,6 @@ export const githubApi = {
     }
   },
 
-  /** Fetch language breakdown for a single repo */
   getRepoLanguages: async (username, repoName) => {
     try {
       const { data } = await client.get(`/users/${username}/repos/${repoName}/languages`);
@@ -61,7 +54,6 @@ export const githubApi = {
     }
   },
 
-  /** Fetch aggregated language stats across all repos */
   getLanguageStats: async (username) => {
     try {
       const { data } = await client.get(`/users/${username}/language-stats`);
