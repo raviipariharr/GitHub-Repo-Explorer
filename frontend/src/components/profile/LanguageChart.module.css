@@ -58,13 +58,19 @@
 .donutWrap {
   display: grid;
   grid-template-columns: 220px 1fr;
-  grid-template-rows: auto auto;
-  gap: 0 12px;
+  gap: 0 16px;
   align-items: center;
 }
-.donutWrap > :first-child { grid-row: 1 / 3; }  /* recharts container spans both rows */
 
-/* Donut centre overlay */
+/* Wraps the recharts ResponsiveContainer + the centre overlay together */
+.donutChartWrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  flex-shrink: 0;
+}
+
+/* Donut centre overlay — sits inside .donutChartWrap */
 .donutCenter {
   position: absolute;
   top: 50%;
@@ -72,9 +78,8 @@
   transform: translate(-50%, -50%);
   text-align: center;
   pointer-events: none;
+  z-index: 1;
 }
-/* The recharts container is position:relative already */
-.donutWrap :global(.recharts-wrapper) { position: relative; }
 
 .donutCenterName {
   display: block;
@@ -173,6 +178,12 @@
 
 /* Responsive */
 @media (max-width: 560px) {
-  .donutWrap { grid-template-columns: 1fr; justify-items: center; }
-  .donutWrap > :first-child { grid-row: auto; }
+  .donutWrap {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .donutChartWrap {
+    width: 200px;
+    height: 200px;
+  }
 }

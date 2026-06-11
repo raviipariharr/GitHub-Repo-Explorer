@@ -105,46 +105,49 @@ export function LanguageChart({ stats, loading }) {
 
       {view === "donut" ? (
         <div className={styles.donutWrap}>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie
-                data={slices}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={95}
-                paddingAngle={2}
-                dataKey="bytes"
-                onMouseEnter={(_, i) => setActive(i)}
-                onMouseLeave={() => setActive(null)}
-                stroke="none"
-              >
-                {slices.map((s, i) => (
-                  <Cell
-                    key={s.name}
-                    fill={langColour(s.name)}
-                    opacity={activeIndex === null || activeIndex === i ? 1 : 0.4}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+          {/* Chart + centre label share one relative container */}
+          <div className={styles.donutChartWrap}>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={slices}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={95}
+                  paddingAngle={2}
+                  dataKey="bytes"
+                  onMouseEnter={(_, i) => setActive(i)}
+                  onMouseLeave={() => setActive(null)}
+                  stroke="none"
+                >
+                  {slices.map((s, i) => (
+                    <Cell
+                      key={s.name}
+                      fill={langColour(s.name)}
+                      opacity={activeIndex === null || activeIndex === i ? 1 : 0.4}
+                      style={{ cursor: "pointer", transition: "opacity 0.2s" }}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
 
-          {/* Centre label */}
-          <div className={styles.donutCenter} aria-hidden="true">
-            {activeIndex !== null ? (
-              <>
-                <span className={styles.donutCenterName}>{slices[activeIndex].name}</span>
-                <span className={styles.donutCenterPct}>{slices[activeIndex].pct.toFixed(1)}%</span>
-              </>
-            ) : (
-              <>
-                <span className={styles.donutCenterName}>Languages</span>
-                <span className={styles.donutCenterPct}>{slices.length}</span>
-              </>
-            )}
+            {/* Centre label — absolutely positioned inside the chart wrapper */}
+            <div className={styles.donutCenter} aria-hidden="true">
+              {activeIndex !== null ? (
+                <>
+                  <span className={styles.donutCenterName}>{slices[activeIndex].name}</span>
+                  <span className={styles.donutCenterPct}>{slices[activeIndex].pct.toFixed(1)}%</span>
+                </>
+              ) : (
+                <>
+                  <span className={styles.donutCenterName}>Languages</span>
+                  <span className={styles.donutCenterPct}>{slices.length}</span>
+                </>
+              )}
+            </div>
           </div>
 
           <ChartLegend slices={slices} activeIndex={activeIndex} onHover={setActive} />
