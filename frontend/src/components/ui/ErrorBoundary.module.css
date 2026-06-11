@@ -1,0 +1,24 @@
+.box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.icon { font-size: 42px; }
+.title { margin: 0; font-size: 18px; color: var(--text); }
+.message { margin: 0; font-size: 14px; color: var(--text-muted); max-width: 420px; }
+.btn {
+  margin-top: 8px;
+  padding: 9px 24px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
