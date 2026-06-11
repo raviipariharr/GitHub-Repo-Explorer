@@ -11,12 +11,15 @@ const errorHandler = require("./middleware/errorHandler");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Trust Render's load balancer so express-rate-limit sees the real client IP
+app.set("trust proxy", 1);
+
 // ── Security & utilities ─────────────────────────────────────────────────────
 app.use(helmet());
-app.use(morgan("dev"));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json());
 
-// CORS – allow the frontend dev server and production origin
+// CORS – allow the frontend origin (set FRONTEND_ORIGIN in Render env vars)
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
@@ -26,7 +29,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Allow requests with no origin (e.g. curl, Postman)
+      // Allow requests with no origin (curl, Postman, Render health checks)
       if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
       return cb(new Error(`CORS: origin ${origin} not allowed`));
     },
@@ -49,7 +52,7 @@ app.use(
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api", githubRoutes);
 
-// Health check
+// Health check — Render pings this to confirm the service is up
 app.get("/health", (req, res) => {
   res.json({ status: "ok", uptime: process.uptime() });
 });
@@ -63,7 +66,8 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n🚀  GitHub Explorer backend running on http://localhost:${PORT}`);
-  console.log(`   GitHub token: ${process.env.GITHUB_TOKEN ? "✅ configured" : "⚠️  not set (lower rate limits)"}\n`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`\n🚀  GitHub Explorer backend running on port ${PORT}`);
+  console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`   GitHub token: ${process.env.GITHUB_TOKEN ? "✅ configured" : "⚠️  not set (60 req/hr limit)"}\n`);
 });
