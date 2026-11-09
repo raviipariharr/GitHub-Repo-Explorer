@@ -4,10 +4,15 @@ import { UserProfile } from "./components/profile/UserProfile";
 import { LanguageChart } from "./components/profile/LanguageChart";
 import { RepoList } from "./components/repos/RepoList";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
+
+import { CompareView } from "./components/compare/CompareView";
+import { InsightsDashboard } from "./components/insights/InsightsDashboard";
+
 import { useUser } from "./hooks/useUser";
 import { useLanguageStats } from "./hooks/useLanguageStats";
 import { useRecentSearches } from "./hooks/useRecentSearches";
-import { CompareView } from "./components/compare/CompareView";
+import { useInsights } from "./hooks/useInsights";
+
 import styles from "./App.module.css";
 
 export default function App() {
@@ -26,6 +31,14 @@ export default function App() {
     reset: resetStats,
   } = useLanguageStats();
 
+  const {
+    insights,
+    loading: insightsLoading,
+    error: insightsError,
+    fetchInsights,
+    reset: resetInsights,
+  } = useInsights();
+
   const { recents, addRecent, removeRecent, clearAll } =
     useRecentSearches();
 
@@ -34,20 +47,24 @@ export default function App() {
 
   async function handleSearch(username) {
     setCurrentUsername(username);
+
     resetStats();
+    resetInsights();
 
     const { data } = await fetchUser(username);
 
     if (data) {
       addRecent(data.login);
       fetchStats(data.login);
+      fetchInsights(data.login);
     }
   }
 
   const handleReset = useCallback(() => {
     resetUser();
     resetStats();
-  }, [resetUser, resetStats]);
+    resetInsights();
+  }, [resetUser, resetStats, resetInsights]);
 
   return (
     <div className={styles.app}>
@@ -63,6 +80,7 @@ export default function App() {
             >
               <path d="M49 1C22.3 1 1 22.3 1 49c0 21.2 13.7 39.1 32.8 45.5 2.4.4 3.3-1 3.3-2.3v-8c-13.3 2.9-16.1-6.4-16.1-6.4-2.2-5.5-5.3-7-5.3-7-4.4-3 .3-2.9.3-2.9 4.8.3 7.4 5 7.4 5 4.3 7.3 11.2 5.2 13.9 4 .4-3.1 1.7-5.2 3-6.4-10.6-1.2-21.8-5.3-21.8-23.6 0-5.2 1.9-9.5 4.9-12.8-.5-1.2-2.1-6.1.5-12.6 0 0 4-.3 13 4.8 3.8-1.1 7.8-1.6 11.8-1.6s8 .5 11.8 1.6c9-5.1 13-4.8 13-4.8 2.6 6.5 1 11.4.5 12.6 3.1 3.3 4.9 7.6 4.9 12.8 0 18.3-11.2 22.3-21.8 23.5 1.7 1.5 3.2 4.4 3.2 8.9v13.2c0 1.3.9 2.8 3.3 2.3C83.3 88.1 97 70.2 97 49 97 22.3 75.7 1 49 1z" />
             </svg>
+
             <span>GitHub Explorer</span>
           </div>
         </div>
@@ -70,12 +88,16 @@ export default function App() {
 
       <main className={styles.main}>
         <section className={styles.hero}>
-          <h1 className={styles.heroTitle}>Explore GitHub Profiles</h1>
+          <h1 className={styles.heroTitle}>
+            Explore GitHub Profiles
+          </h1>
+
           <p className={styles.heroSub}>
             Search any GitHub user to view their profile and repositories.
           </p>
         </section>
 
+        {/* Navigation Tabs */}
         <div className={styles.tabs}>
           <button
             className={view === "profile" ? styles.tabActive : styles.tab}
@@ -92,8 +114,10 @@ export default function App() {
           </button>
         </div>
 
+        {/* Compare View */}
         {view === "compare" && <CompareView />}
 
+        {/* Profile View */}
         {view === "profile" && (
           <>
             <div className={styles.searchSection}>
@@ -119,6 +143,15 @@ export default function App() {
                     <LanguageChart
                       stats={stats}
                       loading={userLoading || statsLoading}
+                    />
+                  )}
+
+                  {/* Insights Dashboard */}
+                  {(user || userLoading) && !userError && (
+                    <InsightsDashboard
+                      insights={insights}
+                      loading={userLoading || insightsLoading}
+                      error={insightsError}
                     />
                   )}
 

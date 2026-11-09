@@ -68,5 +68,14 @@ export const githubApi = {
       return { data: null, error: normaliseError(err) };
     }
   },
-  
+
+  getInsights: async (username) => {
+    try {
+      const { data } = await client.get(`/users/${username}/insights`);
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: normaliseError(err) };
+    }
+  },
+
 };
