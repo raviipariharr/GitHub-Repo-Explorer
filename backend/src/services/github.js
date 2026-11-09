@@ -144,7 +144,7 @@ async function getRepos(username, { page = 1, sort = "updated", direction = "des
 
 /**
  * Fetch language breakdown for a single repository.
- */
+ */ 
 async function getRepoLanguages(username, repoName) {
   const cacheKey = `languages:${username.toLowerCase()}:${repoName}`;
   const cached = cache.get(cacheKey);
@@ -197,4 +197,4 @@ async function getAllRepoLanguages(username) {
   }
 }
 
-module.exports = { getUser, getRepos, getRepoLanguages, getAllRepoLanguages };
+module.exports = { getUser, getRepos, getRepoLanguages, getAllRepoLanguages, githubClient, parseGitHubError };

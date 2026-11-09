@@ -51,6 +51,8 @@ app.use(
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api", githubRoutes);
+const compareRoutes = require("./routes/compare");
+app.use("/api", compareRoutes);
 
 // Health check — Render pings this to confirm the service is up
 app.get("/health", (req, res) => {

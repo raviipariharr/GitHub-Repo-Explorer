@@ -59,4 +59,14 @@ export const githubApi = {
       return { data: null, error: normaliseError(err) };
     }
   },
+
+  compareRepos: async (a, b) => {
+    try {
+      const { data } = await client.get("/compare", { params: { a, b } });
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: normaliseError(err) };
+    }
+  },
+  
 };
