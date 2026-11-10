@@ -87,4 +87,35 @@
   border-radius: 6px;
   transition: background 0.15s;
 }
-.ghLink:hover { background: rgba(88,166,255,0.1); }
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.readmeBtn,
+.ghLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.readmeBtn {
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.readmeBtn:hover,
+.ghLink:hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}

@@ -1,49 +1,88 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { githubApi } from "../../api/client";
 import { formatDate } from "../../utils/formatters";
 import { langColour } from "../../utils/langColours";
 import styles from "./RepoDetails.module.css";
 
+const ReadmeModal = lazy(() =>
+  import("../readme/ReadmeModal").then((m) => ({
+    default: m.ReadmeModal,
+  }))
+);
+
 export function RepoDetails({ repo, username }) {
   const [langs, setLangs] = useState(null);
   const [langsLoading, setLangsLoading] = useState(true);
+  const [showReadme, setShowReadme] = useState(false);
+
+  const [owner] = (repo.full_name || `${username}/${repo.name}`).split("/");
 
   useEffect(() => {
     let cancelled = false;
+
     async function load() {
       setLangsLoading(true);
-      const { data } = await githubApi.getRepoLanguages(username, repo.name);
-      if (!cancelled) {
-        setLangs(data || {});
-        setLangsLoading(false);
+
+      try {
+        const { data } = await githubApi.getRepoLanguages(
+          username,
+          repo.name
+        );
+
+        if (!cancelled) {
+          setLangs(data || {});
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLangs({});
+        }
+      } finally {
+        if (!cancelled) {
+          setLangsLoading(false);
+        }
       }
     }
+
     load();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [username, repo.name]);
 
-  const totalBytes = langs ? Object.values(langs).reduce((a, b) => a + b, 0) : 0;
+  const totalBytes = langs
+    ? Object.values(langs).reduce((a, b) => a + b, 0)
+    : 0;
 
   return (
     <div className={styles.panel}>
-      {/* ── Extra stats grid ─────────────────────────────────────────── */}
+      {/* Extra stats grid */}
       <div className={styles.grid}>
         <Stat label="Watchers" value={repo.watchers_count ?? "—"} />
         <Stat label="Open Issues" value={repo.open_issues_count ?? "—"} />
         <Stat label="Forks" value={repo.forks_count ?? "—"} />
-        <Stat label="Size" value={repo.size ? formatSize(repo.size) : "—"} />
+        <Stat
+          label="Size"
+          value={repo.size ? formatSize(repo.size) : "—"}
+        />
         <Stat label="Default Branch" value={repo.default_branch ?? "—"} />
         <Stat label="Created" value={formatDate(repo.created_at)} />
         <Stat label="Last Push" value={formatDate(repo.pushed_at)} />
-        {repo.license && <Stat label="License" value={repo.license} />}
+        {repo.license && (
+          <Stat label="License" value={repo.license} />
+        )}
       </div>
 
-      {/* ── Homepage ─────────────────────────────────────────────────── */}
+      {/* Homepage */}
       {repo.homepage && (
         <div className={styles.homepage}>
           <span className={styles.homeLabel}>🌐 Homepage:</span>
           <a
-            href={repo.homepage.startsWith("http") ? repo.homepage : `https://${repo.homepage}`}
+            href={
+              repo.homepage.startsWith("http")
+                ? repo.homepage
+                : `https://${repo.homepage}`
+            }
             target="_blank"
             rel="noopener noreferrer"
             className={styles.homeLink}
@@ -53,7 +92,7 @@ export function RepoDetails({ repo, username }) {
         </div>
       )}
 
-      {/* ── Language breakdown ───────────────────────────────────────── */}
+      {/* Language breakdown */}
       <div className={styles.langsSection}>
         <h4 className={styles.langsTitle}>Languages</h4>
 
@@ -62,16 +101,26 @@ export function RepoDetails({ repo, username }) {
             <div className={styles.barSkeleton} />
             <div className={styles.langListSkeleton}>
               {[80, 55, 65].map((w, i) => (
-                <span key={i} className={styles.langItemSkeleton} style={{ width: w }} />
+                <span
+                  key={i}
+                  className={styles.langItemSkeleton}
+                  style={{ width: w }}
+                />
               ))}
             </div>
           </div>
         ) : totalBytes === 0 ? (
-          <p className={styles.noLangs}>No language data available.</p>
+          <p className={styles.noLangs}>
+            No language data available.
+          </p>
         ) : (
           <>
             {/* Stacked bar */}
-            <div className={styles.langBar} role="img" aria-label="Language breakdown bar">
+            <div
+              className={styles.langBar}
+              role="img"
+              aria-label="Language breakdown bar"
+            >
               {Object.entries(langs)
                 .sort((a, b) => b[1] - a[1])
                 .map(([lang, bytes]) => (
@@ -82,7 +131,10 @@ export function RepoDetails({ repo, username }) {
                       width: `${((bytes / totalBytes) * 100).toFixed(2)}%`,
                       background: langColour(lang),
                     }}
-                    title={`${lang}: ${((bytes / totalBytes) * 100).toFixed(1)}%`}
+                    title={`${lang}: ${(
+                      (bytes / totalBytes) *
+                      100
+                    ).toFixed(1)}%`}
                   />
                 ))}
             </div>
@@ -109,15 +161,35 @@ export function RepoDetails({ repo, username }) {
         )}
       </div>
 
-      {/* ── View on GitHub ───────────────────────────────────────────── */}
-      <a
-        className={styles.ghLink}
-        href={repo.html_url}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        View on GitHub ↗
-      </a>
+      {/* Actions */}
+      <div className={styles.actions}>
+        <button
+          className={styles.readmeBtn}
+          onClick={() => setShowReadme(true)}
+        >
+          View README
+        </button>
+
+        <a
+          className={styles.ghLink}
+          href={repo.html_url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View on GitHub ↗
+        </a>
+      </div>
+
+      {/* README Modal */}
+      {showReadme && (
+        <Suspense fallback={null}>
+          <ReadmeModal
+            owner={owner}
+            repo={repo.name}
+            onClose={() => setShowReadme(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

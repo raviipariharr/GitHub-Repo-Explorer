@@ -17,8 +17,10 @@ const PORT = process.env.PORT || 4000;
 const discoveryRoutes = require("./routes/discovery");
 
 app.use("/api", discoveryRoutes);
-
 app.set("trust proxy", 1);
+
+const readmeRoutes = require("./routes/readme");
+app.use("/api", readmeRoutes);
 
 // Security and utilities
 app.use(helmet());

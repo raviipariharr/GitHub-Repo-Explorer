@@ -40,6 +40,17 @@ export const githubApi = {
     }
   },
 
+  getReadme: async (owner, repo) => {
+    try {
+      const { data } = await client.get(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/readme`
+      );
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: normaliseError(err) };
+    }
+  },
+
   discover: async (params = {}) => {
     try {
       const clean = Object.fromEntries(

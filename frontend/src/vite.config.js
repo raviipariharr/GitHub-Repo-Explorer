@@ -8,10 +8,15 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("recharts") || id.includes("d3-")) return "vendor-recharts";
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) return "vendor-react";
+          if (id.includes("recharts") || id.includes("d3-")) {
+            return "vendor-recharts";
+          }
+
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) {
+            return "vendor-react";
+          }
         },
       },
     },
   },
-});
+}); 
