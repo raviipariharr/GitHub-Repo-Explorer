@@ -1,4 +1,5 @@
 import axios from "axios";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const client = axios.create({
@@ -15,10 +16,18 @@ function normaliseError(error) {
       resetAt: error.response.data.resetAt || null,
     };
   }
+
   if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
-    return { message: "Cannot reach the server. Is the backend running?", status: 0 };
+    return {
+      message: "Cannot reach the server. Is the backend running?",
+      status: 0,
+    };
   }
-  return { message: error.message || "An unexpected error occurred.", status: 0 };
+
+  return {
+    message: error.message || "An unexpected error occurred.",
+    status: 0,
+  };
 }
 
 export const githubApi = {
@@ -31,11 +40,33 @@ export const githubApi = {
     }
   },
 
-  getRepos: async (username, { page = 1, sort = "updated", direction = "desc" } = {}) => {
+  discover: async (params = {}) => {
+    try {
+      const clean = Object.fromEntries(
+        Object.entries(params).filter(
+          ([, v]) => v !== undefined && v !== null && v !== ""
+        )
+      );
+
+      const { data } = await client.get("/discover", {
+        params: clean,
+      });
+
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: normaliseError(err) };
+    }
+  },
+
+  getRepos: async (
+    username,
+    { page = 1, sort = "updated", direction = "desc" } = {}
+  ) => {
     try {
       const { data } = await client.get(`/users/${username}/repos`, {
         params: { page, sort, direction },
       });
+
       return { data, error: null };
     } catch (err) {
       return { data: null, error: normaliseError(err) };
@@ -44,7 +75,10 @@ export const githubApi = {
 
   getRepoLanguages: async (username, repoName) => {
     try {
-      const { data } = await client.get(`/users/${username}/repos/${repoName}/languages`);
+      const { data } = await client.get(
+        `/users/${username}/repos/${repoName}/languages`
+      );
+
       return { data, error: null };
     } catch (err) {
       return { data: null, error: normaliseError(err) };
@@ -53,7 +87,10 @@ export const githubApi = {
 
   getLanguageStats: async (username) => {
     try {
-      const { data } = await client.get(`/users/${username}/language-stats`);
+      const { data } = await client.get(
+        `/users/${username}/language-stats`
+      );
+
       return { data, error: null };
     } catch (err) {
       return { data: null, error: normaliseError(err) };
@@ -62,7 +99,10 @@ export const githubApi = {
 
   compareRepos: async (a, b) => {
     try {
-      const { data } = await client.get("/compare", { params: { a, b } });
+      const { data } = await client.get("/compare", {
+        params: { a, b },
+      });
+
       return { data, error: null };
     } catch (err) {
       return { data: null, error: normaliseError(err) };
@@ -71,11 +111,13 @@ export const githubApi = {
 
   getInsights: async (username) => {
     try {
-      const { data } = await client.get(`/users/${username}/insights`);
+      const { data } = await client.get(
+        `/users/${username}/insights`
+      );
+
       return { data, error: null };
     } catch (err) {
       return { data: null, error: normaliseError(err) };
     }
   },
-
 };

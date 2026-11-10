@@ -14,6 +14,9 @@ const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const discoveryRoutes = require("./routes/discovery");
+
+app.use("/api", discoveryRoutes);
 
 app.set("trust proxy", 1);
 

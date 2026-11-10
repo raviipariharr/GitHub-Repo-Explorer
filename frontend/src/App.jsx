@@ -12,7 +12,7 @@ import { useUser } from "./hooks/useUser";
 import { useLanguageStats } from "./hooks/useLanguageStats";
 import { useRecentSearches } from "./hooks/useRecentSearches";
 import { useInsights } from "./hooks/useInsights";
-
+import { DiscoverView } from "./components/discover/DiscoverView";
 import styles from "./App.module.css";
 
 export default function App() {
@@ -112,11 +112,26 @@ export default function App() {
           >
             Compare
           </button>
+
+          <button
+            className={view === "discover" ? styles.tabActive : styles.tab}
+            onClick={() => setView("discover")}
+          >
+            Discover
+          </button>
+
         </div>
 
         {/* Compare View */}
         {view === "compare" && <CompareView />}
 
+        {/* Discover View */}
+        {view === "discover" && (
+          <ErrorBoundary>
+            <DiscoverView />
+          </ErrorBoundary>
+        )}
+        
         {/* Profile View */}
         {view === "profile" && (
           <>
