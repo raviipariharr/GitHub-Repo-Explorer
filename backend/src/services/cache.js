@@ -18,10 +18,12 @@ class Cache {
   get(key) {
     const entry = this.store.get(key);
     if (!entry) return null;
+
     if (Date.now() > entry.expiresAt) {
       this.store.delete(key);
       return null;
     }
+
     return entry.value;
   }
 
@@ -33,11 +35,14 @@ class Cache {
     this.store.delete(key);
   }
 
-  // Remove all expired entries (call periodically to avoid memory leak)
+  // Remove all expired entries.
   purgeExpired() {
     const now = Date.now();
+
     for (const [key, entry] of this.store.entries()) {
-      if (now > entry.expiresAt) this.store.delete(key);
+      if (now > entry.expiresAt) {
+        this.store.delete(key);
+      }
     }
   }
 
@@ -48,7 +53,14 @@ class Cache {
 
 const cache = new Cache(60_000);
 
-// Purge expired entries every 2 minutes
-setInterval(() => cache.purgeExpired(), 2 * 60_000);
+// Run automatic cleanup outside the test environment.
+if (process.env.NODE_ENV !== "test") {
+  const purgeInterval = setInterval(
+    () => cache.purgeExpired(),
+    2 * 60_000
+  );
 
+  // Allow Node.js to exit even if this timer is still active.
+  purgeInterval.unref();
+}
 module.exports = cache;

@@ -22,7 +22,7 @@ const REHYPE_PLUGINS = [
   rehypeRaw,
   rehypeSanitize,
   rehypeSlug,
-  [rehypeHighlight, { detect: false, ignoreMissing: true }],
+  [rehypeHighlight, { detect: false }],
 ];
 
 const COMPONENTS = {
