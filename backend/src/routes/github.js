@@ -16,6 +16,11 @@ function isValidUsername(username) {
   return /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/.test(username);
 }
 
+/** Repo names: letters, digits, ".", "_", "-" (1–100 chars); "." and ".." are path segments. */
+function isValidRepoName(repo) {
+  return /^[A-Za-z0-9._-]{1,100}$/.test(repo) && repo !== "." && repo !== "..";
+}
+
 // GET /api/users/:username
 router.get("/users/:username", async (req, res, next) => {
   const { username } = req.params;
@@ -68,6 +73,9 @@ router.get("/users/:username/repos/:repo/languages", async (req, res, next) => {
 
   if (!isValidUsername(username)) {
     return res.status(422).json({ error: true, message: "Invalid username." });
+  }
+  if (!isValidRepoName(repo)) {
+    return res.status(422).json({ error: true, message: "Invalid repository name." });
   }
 
   try {
