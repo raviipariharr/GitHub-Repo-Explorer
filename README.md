@@ -47,6 +47,8 @@ The frontend never calls the GitHub API directly. Every request goes through a N
 | **nodemon** | ^3.0 | Hot reload during development |
 | **dotenv** | — | Loads `GITHUB_TOKEN` and other settings from `.env` |
 
+**Test tooling (dev):** Jest and Supertest drive the real Express app with a fake GitHub client; no test touches the network.
+
 The cache (`src/services/cache.js`) is a plain `Map` with TTL timestamps. No Redis, no configuration, suitable for a single-instance demo server.
 
 ### Frontend
@@ -68,6 +70,8 @@ The cache (`src/services/cache.js`) is a plain `Map` with TTL timestamps. No Red
 | **rehype-slug** | Heading ids using GitHub's slug algorithm so `#section` links and the table of contents work |
 | **rehype-highlight** + **highlight.js** | Syntax highlighting for fenced code blocks |
 | **github-markdown-css** | GitHub's own Markdown styling (dark theme) |
+
+**Test tooling (dev):** Vitest, jsdom and React Testing Library render the real README viewer in a DOM.
 
 **No state management library.** `useState`, `useCallback`, and `useRef` are enough for this data flow.
 
@@ -139,6 +143,15 @@ cd frontend
 npm run build      # outputs to frontend/dist/
 npm run preview    # serves the built files locally
 ```
+
+### 5. Run the tests
+
+```bash
+cd backend  && npm test     # Jest + Supertest
+cd frontend && npm test     # Vitest + Testing Library
+```
+
+See [Testing](#testing) for what is covered.
 
 ---
 
@@ -419,6 +432,32 @@ Without a token, only about four profile searches fit in an hour. Set `GITHUB_TO
 
 ---
 
+## Testing
+
+Backend: **173 tests** (Jest + Supertest). Frontend: **54 tests** (Vitest + Testing Library). GitHub is always mocked, so the suites are fast (a few seconds), offline, and deterministic.
+
+| Area | Where | What is checked |
+|---|---|---|
+| **Invalid input validation** | `backend/tests/validation.test.js` | Bad usernames (leading/trailing hyphen, `_`, `.`, spaces, 40 chars, HTML) get `422` on every user route and never reach GitHub; username/repo boundary lengths; repo-name path traversal (`..`); `page`/`sort`/`direction` fall back to safe defaults; compare, discover and README input rules |
+| **Repository / user not found** | `backend/tests/notFound.test.js` | `404` messages for users, repos, compare (names the missing repo), README, discover; a `404` is never cached; unknown routes return JSON |
+| **GitHub API rate limits** | `backend/tests/rateLimit.test.js` | `403` + `x-ratelimit-reset` becomes `429` with an ISO `resetAt`; secondary-limit `429`; Search API limit; limits on compare, insights and README; limit errors are not cached; timeout `504`, connection failure `502`; the error handler never leaks internals |
+| **Our own rate limiter** | `backend/tests/globalLimiter.test.js` | A burst of 130 concurrent requests yields exactly 120 successes and 10 JSON `429`s with `RateLimit-*` headers |
+| **Cache hit / miss** | `backend/tests/cache.test.js`, `cacheHeaders.test.js` | TTL boundary (valid at 59.9 s, expired at 60.0 s), purge, `X-Cache: MISS → HIT → MISS`, case-insensitive usernames, separate keys per page/sort/direction, caching on README, discover and insights |
+| **Concurrent requests** | `backend/tests/concurrency.test.js` | 20 parallel requests for different users never cross-contaminate; mixed success / 404 / 429 resolve independently; one request fans out to GitHub in parallel (compare ≥ 4 calls in flight, insights 6) |
+| **Recommendation scoring** | `backend/tests/discoveryScoring.test.js` | Each weight (topics 40 %, language 20 %, stars 25 % on a log scale, recency 15 % with a 180-day half-life), renormalisation without a language, ranking rules (topic match beats popularity, fresh beats stale), seed/archived/duplicate exclusion, 20-result cap, search qualifiers sent to GitHub |
+| **README sanitization** | `frontend/src/components/readme/ReadmeViewer.test.jsx` | `<script>`, event-handler attributes, `javascript:` / `data:` / `vbscript:` URLs (including mixed-case, whitespace and entity-encoded forms), `<iframe>`, `<object>`, `<embed>`, `<form>`, `<style>`, `<base>` and more are removed; `style` attributes stripped; raw-HTML ids prefixed; XSS in headings stays inert in the contents list; safe HTML, tables, task lists and highlighting still work |
+| **README rendering and URLs** | same file + `frontend/src/utils/readmeUrls.test.js` | Relative images/links resolve against the repo (subfolders, `../`, leading `/`), contents list, in-page anchors |
+| **Supporting logic** | `compare.test.js`, `insights.test.js`, `readme.test.js` | `Link`-header counting, `null` counts for empty repos, growth gap-year fill, star buckets, fork exclusion, README decoding/truncation/URL bases |
+
+The sanitisation tests were mutation-checked: removing `rehype-sanitize` fails 12 of them, and running it after highlighting fails 4.
+
+**Known gaps** are recorded as `test.todo` entries so they stay visible:
+
+- Simultaneous identical requests each hit GitHub (no in-flight de-duplication).
+- `language-stats` swallows per-page errors, so a rate limit shows up as an empty chart instead of an error.
+
+---
+
 ## Deployment
 
 Both services are deployed on Render.
@@ -454,7 +493,8 @@ github-explorer/
 │
 ├── backend/                          # Express proxy server
 │   ├── src/
-│   │   ├── index.js                  # App entry: middleware, routes, server start
+│   │   ├── app.js                    # createApp(): middleware + routes, no listen (importable by tests)
+│   │   ├── index.js                  # Loads .env, builds the app, starts the server
 │   │   ├── routes/
 │   │   │   ├── github.js             # Users, repos, languages, language-stats
 │   │   │   ├── compare.js            # GET /api/compare
@@ -470,6 +510,8 @@ github-explorer/
 │   │   │   └── cache.js              # In-memory TTL cache (Map + timestamps, 60 s, auto-purge)
 │   │   └── middleware/
 │   │       └── errorHandler.js       # Central error → JSON response (last in chain)
+│   ├── __mocks__/axios.js            # Fake GitHub client shared by every backend test
+│   ├── tests/                        # 11 Jest suites + helpers.js (fixtures, mockGitHub)
 │   ├── .env.example                  # Documents PORT, GITHUB_TOKEN, FRONTEND_ORIGIN
 │   └── package.json
 │
@@ -489,7 +531,8 @@ github-explorer/
     │   ├── utils/
     │   │   ├── formatters.js         # Relative dates ("3 days ago"), compact numbers ("12.3k")
     │   │   ├── langColours.js        # GitHub Linguist colours + deterministic fallback hash
-    │   │   └── readmeUrls.js         # Resolve README-relative image/link URLs
+    │   │   ├── readmeUrls.js         # Resolve README-relative image/link URLs
+    │   │   └── readmeUrls.test.js
     │   ├── components/
     │   │   ├── search/               # SearchBar (input, recent searches dropdown)
     │   │   ├── profile/              # UserProfile, LanguageChart (donut/bar toggle)
@@ -505,6 +548,7 @@ github-explorer/
     │   └── main.jsx                  # React root, mounts ErrorBoundary + App
     ├── index.html                    # Vite entry HTML
     ├── vite.config.js                # Dev proxy /api → :4000; vendor chunk splitting
+    ├── vitest.config.js              # jsdom test environment
     └── package.json
 ```
 
@@ -514,7 +558,7 @@ Each component folder also contains its `*.module.css` file.
 
 ## Known Limitations
 
-- **No automated tests.** The pure functions (`scoreRepo`, `growthByYear`, `resolveRelativeUrl`, the Link-header parser) are the best first targets.
+- **Tests mock GitHub.** They prove our code handles GitHub's documented responses, not that GitHub still behaves that way. There is no coverage report and no CI run yet. Open gaps are listed under [Testing](#testing).
 - **In-memory cache.** It resets on restart and is not shared across instances. Redis would fix both.
 - **Insights analyse at most 300 repositories** and exclude forks. "Most active" means commits in the last 90 days (any author) on only the 6 most recently pushed repos, to cap API calls.
 - **"Most popular languages" counts repos per primary language**, not lines of code. True byte counts need one API call per repository.
@@ -538,8 +582,8 @@ Each component folder also contains its `*.module.css` file.
 
 ### What I would build next
 
-1. **Test suite**: Vitest for hooks and pure utils, Supertest + Jest for routes and services.
-2. **CI/CD**: GitHub Actions to lint and test on every pull request and auto-deploy `main` to Render.
+1. **CI/CD**: GitHub Actions to run both test suites on every pull request and auto-deploy `main` to Render.
+2. **Request de-duplication**: share one in-flight GitHub call between identical concurrent requests (turns the `test.todo` into a real test).
 3. **User comparison**: compare two usernames (follower counts, language mix, activity), complementing the repository comparison.
 4. **Activity heatmap**: contribution-style graph from the GitHub Events API.
 5. **README viewer polish**: scroll-spy highlighting in the table of contents, a focus trap in the modal, Mermaid and emoji support.
